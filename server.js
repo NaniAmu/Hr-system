@@ -13,6 +13,8 @@ dotenv.config();
 /* -------------------- DB + MODELS -------------------- */
 const connectDB = require("./config/database");
 const User = require("./models/User");
+const Employee = require("./models/Employee");
+const Department = require("./models/Department");
 
 /* -------------------- APP INIT -------------------- */
 const app = express();
@@ -57,38 +59,74 @@ app.use((err, req, res, next) => {
 
 /* -------------------- HR ADMIN SEED -------------------- */
 async function seedHRAdmin() {
+  // Ensure we have a default department
+  let itDept = await Department.findOne({ code: "IT" });
+  if (!itDept) {
+    itDept = await Department.create({
+      name: "IT Department",
+      code: "IT"
+    });
+    console.log("✅ Default IT Department created");
+  }
+
   // Seed 1: hradmin@gov.et
   const email1 = "hradmin@gov.et";
   const password1 = "HR@Admin123";
 
-  const existing1 = await User.findOne({ email: email1 });
-  if (!existing1) {
-    await User.create({
+  let user1 = await User.findOne({ email: email1 });
+  if (!user1) {
+    user1 = await User.create({
       email: email1,
       password: password1,
       role: "ADMIN",
       isActive: true
     });
-    console.log("✅ HR Admin created: hradmin@gov.et");
-  } else {
-    console.log("✅ HR Admin exists: hradmin@gov.et");
+    console.log("✅ HR Admin user created: hradmin@gov.et");
+  }
+
+  let emp1 = await Employee.findOne({ userId: user1._id });
+  if (!emp1) {
+    await Employee.create({
+      userId: user1._id,
+      role: "ADMIN",
+      employeeCode: "EMP000",
+      fullName: "HR Administrator",
+      email: email1,
+      departmentId: itDept._id,
+      position: "Senior HR Admin",
+      status: "ACTIVE"
+    });
+    console.log("✅ HR Admin employee profile created");
   }
 
   // Seed 2: admin@example.com
   const email2 = "admin@example.com";
   const password2 = "admin123";
 
-  const existing2 = await User.findOne({ email: email2 });
-  if (!existing2) {
-    await User.create({
+  let user2 = await User.findOne({ email: email2 });
+  if (!user2) {
+    user2 = await User.create({
       email: email2,
       password: password2,
       role: "ADMIN",
       isActive: true
     });
-    console.log("✅ Admin created: admin@example.com / admin123");
-  } else {
-    console.log("✅ Admin exists: admin@example.com");
+    console.log("✅ Admin user created: admin@example.com / admin123");
+  }
+
+  let emp2 = await Employee.findOne({ userId: user2._id });
+  if (!emp2) {
+    await Employee.create({
+      userId: user2._id,
+      role: "ADMIN",
+      employeeCode: "EMP001",
+      fullName: "System Admin",
+      email: email2,
+      departmentId: itDept._id,
+      position: "Systems Administrator",
+      status: "ACTIVE"
+    });
+    console.log("✅ Admin employee profile created");
   }
 }
 
@@ -96,17 +134,17 @@ async function seedHRAdmin() {
 async function startServer() {
   try {
     await connectDB();
-    console.log(" Connected to MongoDB");
+    console.log("✅ Connected to MongoDB");
 
     await seedHRAdmin();
 
     app.listen(PORT, () => {
-      console.log(` HR Management API running on port ${PORT}`);
+      console.log(`🚀 HR Management API running on port ${PORT}`);
       console.log(`API Base: http://localhost:${PORT}/api`);
     });
 
   } catch (err) {
-    console.error(" Server startup failed:", err);
+    console.error("❌ Server startup failed:", err);
     process.exit(1);
   }
 }

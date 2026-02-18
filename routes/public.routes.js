@@ -104,5 +104,30 @@ router.get('/departments/:id/employees', async (req, res) => {
     });
   }
 });
+    
+    /**
+ * Get all departments
+ * GET /api/public/departments
+ * Used by Helpdesk for department selection
+ */
+router.get('/departments', async (req, res) => {
+  try {
+    const departments = await Department.find({ isActive: true })
+      .select('name code')
+      .sort({ name: 1 });
+
+    res.json(departments.map(d => ({
+      _id: d._id,
+      name: d.name,
+      code: d.code
+    })));
+  } catch (error) {
+    console.error('Error fetching public departments:', error);
+    res.status(500).json({
+      code: 'INTERNAL_ERROR',
+      message: 'Failed to fetch departments'
+    });
+  }
+});
 
 module.exports = router;

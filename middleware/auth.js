@@ -29,9 +29,11 @@ async function authenticate(req, res, next) {
     const userId = decoded.userId;
     const userRole = decoded.role;
 
-    // Find employee record
+    // Find employee record — only if userId is a valid ObjectId
+    // Service tokens (e.g. from Helpdesk) may have non-ObjectId userIds
     let employee = null;
-    if (userId) {
+    const mongoose = require('mongoose');
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
       employee = await Employee.findOne({ userId, status: 'ACTIVE' })
         .populate('departmentId', 'name code')
         .populate('userId', 'email role');

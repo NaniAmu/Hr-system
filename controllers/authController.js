@@ -188,10 +188,12 @@ class AuthController {
 
       const userPayload = {
         id: user._id.toString(),
-        employeeId: employee?._id?.toString() || null,
+        userId: user._id.toString(),
+        employeeId: employee?._id?.toString() || user._id.toString(),
         role: user.role,
         departmentId: departmentId ? departmentId.toString() : null,
-        email: user.email
+        email: user.email,
+        name: employee?.fullName || user.email
       };
 
       res.json({
