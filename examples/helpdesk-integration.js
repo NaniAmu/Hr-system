@@ -117,7 +117,7 @@ class HRApiService {
  * Caches employee data to reduce API calls
  */
 class EmployeeCache {
-  constructor(ttl = 300000) { // 5 minutes default
+  constructor(ttl = 300400) { // 5 minutes default
     this.cache = new Map();
     this.ttl = ttl;
   }

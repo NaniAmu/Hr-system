@@ -72,7 +72,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@hrsystem.gov\",\n  \"password\": \"Admin123!\",\n  \"role\": \"ADMIN\",\n  \"fullName\": \"System Administrator\",\n  \"phone\": \"+1234567890\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"position\": \"System Administrator\"\n}"
+              "raw": "{\n  \"email\": \"admin@hrsystem.gov\",\n  \"password\": \"AdminHr123!\",\n  \"role\": \"ADMIN\",\n  \"fullName\": \"System Administrator\",\n  \"phone\": \"+1234567890\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"position\": \"System Administrator\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/register",
@@ -182,7 +182,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@hrsystem.gov\",\n  \"password\": \"Admin123!\"\n}"
+              "raw": "{\n  \"email\": \"admin@hrsystem.gov\",\n  \"password\": \"AdminHr123!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",

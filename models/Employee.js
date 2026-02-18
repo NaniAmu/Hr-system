@@ -16,16 +16,14 @@ const employeeSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ['ADMIN', 'HR', 'HR_ADMIN', 'DEPARTMENT_HEAD', 'EMPLOYEE'],
-    index: true
+    enum: ['ADMIN', 'HR', 'HR_ADMIN', 'DEPARTMENT_HEAD', 'EMPLOYEE']
   },
   employeeCode: {
     type: String,
     required: true,
     unique: true,
     uppercase: true,
-    trim: true,
-    index: true
+    trim: true
   },
   fullName: {
     type: String,
@@ -47,8 +45,7 @@ const employeeSchema = new mongoose.Schema({
   departmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Department',
-    default: null,
-    index: true
+    default: null
   },
   // "profession" is the canonical job field (requested).
   // Keep "position" for backward compatibility with existing UI/integration.
@@ -77,8 +74,7 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: ['ACTIVE', 'INACTIVE'],
-    default: 'ACTIVE',
-    index: true
+    default: 'ACTIVE'
   },
   hiredAt: {
     type: Date,

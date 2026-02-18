@@ -1,269 +1,428 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  AppBar,
-  Toolbar,
-  Box,
-  Chip,
-  IconButton
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { 
+  Search, 
+  Plus, 
+  MoreVertical, 
+  UserX, 
+  Edit2, 
+  Mail, 
+  Phone,
+  Filter,
+  ChevronDown
+} from 'lucide-react';
 import api from '../services/api';
-import AddIcon from '@mui/icons-material/Add';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import Modal from '../components/Modal';
 
 const EmployeesPage = () => {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
   const [formData, setFormData] = useState({
-    userId: '',
     fullName: '',
     email: '',
     phone: '',
     departmentId: '',
     jobTitle: '',
-    roleType: 'EMPLOYEE',
     employmentStatus: 'ACTIVE',
-    workloadScore: 0
+    roleType: 'EMPLOYEE'
   });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchEmployees();
-    fetchDepartments();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await Promise.all([fetchEmployees(), fetchDepartments()]);
+      } catch (err) {
+        console.error('Error loading page data:', err);
+        setError('Failed to load employee data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   const fetchEmployees = async () => {
     try {
       const response = await api.get('/api/hr/employees');
-      setEmployees(response.data.data);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.log("EMPLOYEE RESPONSE:", response.data);
+      
+      const list = 
+        response?.data?.data?.employees || 
+        response?.data?.data || 
+        response?.data || 
+        [];
+
+      if (Array.isArray(list)) {
+        setEmployees(list);
+      } else {
+        console.error("Expected array for employees but got:", typeof list);
+        setEmployees([]);
+      }
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+      throw err;
     }
   };
 
   const fetchDepartments = async () => {
     try {
       const response = await api.get('/api/hr/departments');
-      setDepartments(response.data.data);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
+      console.log("DEPARTMENT RESPONSE:", response.data);
+      
+      const list = 
+        response?.data?.data?.departments || 
+        response?.data?.data || 
+        response?.data || 
+        [];
+
+      if (Array.isArray(list)) {
+        setDepartments(list);
+      } else {
+        console.error("Expected array for departments but got:", typeof list);
+        setDepartments([]);
+      }
+    } catch (err) {
+      console.error('Error fetching departments:', err);
+      // Don't throw here to allow page to load even if depts fail
     }
   };
 
-  const handleCreate = async () => {
-    try {
-      setLoading(true);
-      await api.post('/api/hr/employees', formData);
-      setOpenDialog(false);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading employees...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <p className="text-red-600 font-medium mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const handleOpenModal = (employee = null) => {
+    if (employee) {
+      setEditingEmployee(employee);
       setFormData({
-        userId: '',
+        fullName: employee.fullName,
+        email: employee.email,
+        phone: employee.phone || '',
+        departmentId: employee.departmentId || '',
+        jobTitle: employee.jobTitle,
+        employmentStatus: employee.employmentStatus,
+        roleType: employee.roleType || 'EMPLOYEE'
+      });
+    } else {
+      setEditingEmployee(null);
+      setFormData({
         fullName: '',
         email: '',
         phone: '',
         departmentId: '',
         jobTitle: '',
-        roleType: 'EMPLOYEE',
         employmentStatus: 'ACTIVE',
-        workloadScore: 0
+        roleType: 'EMPLOYEE'
       });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingEmployee) {
+        await api.put(`/api/hr/employees/${editingEmployee.id}`, formData);
+      } else {
+        await api.post('/api/hr/employees', formData);
+      }
+      setIsModalOpen(false);
       fetchEmployees();
     } catch (error) {
-      console.error('Error creating employee:', error);
-      alert(error.response?.data?.message || 'Failed to create employee');
-    } finally {
-      setLoading(false);
+      console.error('Error saving employee:', error);
+      alert(error.response?.data?.message || 'Failed to save employee');
     }
   };
 
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (emp.employeeCode && emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesDept = deptFilter === '' || emp.departmentId === deptFilter;
+    const matchesStatus = statusFilter === '' || emp.employmentStatus === statusFilter;
+    
+    return matchesSearch && matchesDept && matchesStatus;
+  });
+
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            HR Management System - Employees
-          </Typography>
-          <Button color="inherit" onClick={() => navigate('/')}>
-            Dashboard
-          </Button>
-          <Button color="inherit" onClick={logout}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Employees</h1>
+          <p className="text-gray-500 mt-1">Manage your workforce efficiently.</p>
+        </div>
+        <button 
+          onClick={() => handleOpenModal()}
+          className="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-sm gap-2"
+        >
+          <Plus size={20} />
+          Add Employee
+        </button>
+      </div>
 
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4" component="h1">
-            Employees Management
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
+      {/* Filters Section */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input 
+            type="text"
+            placeholder="Search by name, email or code..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <select 
+            className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer"
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
           >
-            Create Employee
-          </Button>
-        </Box>
+            <option value="">All Departments</option>
+            {departments.map(dept => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
+          </select>
+          <select 
+            className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+      </div>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Job Title</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Workload</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {employees.map((emp) => (
-                <TableRow key={emp.id}>
-                  <TableCell>{emp.fullName}</TableCell>
-                  <TableCell>{emp.email}</TableCell>
-                  <TableCell>{emp.department_name || 'Unassigned'}</TableCell>
-                  <TableCell>{emp.jobTitle}</TableCell>
-                  <TableCell>{emp.roleType}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={emp.employmentStatus}
-                      color={emp.employmentStatus === 'ACTIVE' ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{emp.workloadScore}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => navigate(`/employees/${emp.id}`)}
-                    >
-                      <VisibilityIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      {/* Table Section */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Position</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-10 text-center text-gray-400">Loading employees...</td>
+                </tr>
+              ) : filteredEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
+                        <Search size={32} />
+                      </div>
+                      <p className="text-gray-500 font-medium">No employees found</p>
+                      <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredEmployees.map((emp) => (
+                  <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                          {emp.fullName.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{emp.fullName}</p>
+                          <p className="text-sm text-gray-500">{emp.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded text-sm">
+                        {emp.department_name || 'Unassigned'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{emp.jobTitle}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        emp.employmentStatus === 'ACTIVE' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {emp.employmentStatus}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => handleOpenModal(emp)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Deactivate"
+                        >
+                          <UserX size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Create Employee</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              label="Full Name"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              margin="normal"
-            />
-            <TextField
-              fullWidth
-              label="User ID (for linking)"
-              value={formData.userId}
-              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-              margin="normal"
-              helperText="Link to external user account (optional)"
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Department</InputLabel>
-              <Select
-                value={formData.departmentId}
-                onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                label="Department"
-              >
-                <MenuItem value="">None</MenuItem>
-                {departments.map((dept) => (
-                  <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Job Title"
-              value={formData.jobTitle}
-              onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-              margin="normal"
-              required
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Role Type</InputLabel>
-              <Select
-                value={formData.roleType}
-                onChange={(e) => setFormData({ ...formData, roleType: e.target.value })}
-                label="Role Type"
-              >
-                <MenuItem value="ADMIN">Admin</MenuItem>
-                <MenuItem value="HEAD">Head</MenuItem>
-                <MenuItem value="EMPLOYEE">Employee</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Employment Status</InputLabel>
-              <Select
-                value={formData.employmentStatus}
-                onChange={(e) => setFormData({ ...formData, employmentStatus: e.target.value })}
-                label="Employment Status"
-              >
-                <MenuItem value="ACTIVE">Active</MenuItem>
-                <MenuItem value="INACTIVE">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreate} variant="contained" disabled={loading}>
-              Create
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
-    </>
+      {/* Add/Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input 
+                type="text" 
+                required
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input 
+                  type="tel" 
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select 
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.departmentId}
+                  onChange={(e) => setFormData({...formData, departmentId: e.target.value})}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(dept => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.jobTitle}
+                  onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select 
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.roleType}
+                  onChange={(e) => setFormData({...formData, roleType: e.target.value})}
+                >
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="HEAD">Department Head</option>
+                  <option value="ADMIN">HR Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select 
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formData.employmentStatus}
+                  onChange={(e) => setFormData({...formData, employmentStatus: e.target.value})}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-4">
+            <button 
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+            >
+              {editingEmployee ? 'Save Changes' : 'Create Employee'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
   );
 };
 
 export default EmployeesPage;
+

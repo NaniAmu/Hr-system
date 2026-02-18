@@ -54,7 +54,7 @@ echo "VITE_API_URL=http://localhost:3001" > .env
 npm run dev
 ```
 
-Frontend will run on `http://localhost:3000`
+Frontend will run on `http://localhost:3004`
 
 ## Configuration
 
@@ -72,7 +72,7 @@ DB_USER=postgres
 DB_PASSWORD=your_password
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=24h
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3004
 ```
 
 **Important**: The `JWT_SECRET` must match the secret used in your Help Desk system for token verification.

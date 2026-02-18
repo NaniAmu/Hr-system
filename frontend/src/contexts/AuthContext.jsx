@@ -60,13 +60,42 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common['Authorization'];
   };
 
+  const hasRole = (roles) => {
+    // Safe role checking with case-insensitive comparison
+    if (!roles || !Array.isArray(roles)) return false;
+    
+    // If no user, default to showing all items (don't hide due to missing role)
+    if (!user) {
+      console.warn('[AUTH] No user found, defaulting to show all navigation items');
+      return true;
+    }
+
+    // Normalize user role to lowercase for comparison
+    const userRole = user?.role?.toLowerCase() || '';
+    
+    // Normalize roles array to lowercase for comparison
+    const normalizedRoles = roles.map(r => r.toLowerCase());
+    
+    // Check if user role matches any of the allowed roles
+    const hasAccess = normalizedRoles.includes(userRole);
+    
+    console.log('[AUTH] Role check:', {
+      userRole,
+      allowedRoles: normalizedRoles,
+      hasAccess
+    });
+    
+    return hasAccess;
+  };
+
   const value = {
     user,
     token,
     login,
     logout,
     loading,
-    isAuthenticated: !!token
+    isAuthenticated: !!token,
+    hasRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

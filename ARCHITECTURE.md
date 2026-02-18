@@ -10,7 +10,7 @@ The HR Management System is a standalone backend + frontend application that ser
 ┌─────────────────┐
 │   Frontend      │
 │   (React)       │
-│   Port: 3000    │
+│   Port: 3004    │
 └────────┬────────┘
          │ HTTP/REST
          │

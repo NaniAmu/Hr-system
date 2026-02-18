@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Generate JWT token
- * @param {Object} payload - Token payload (userId, role, employeeId)
+ * @param {Object} payload - Token payload (userId, role, employeeId, departmentId, email)
  * @returns {String} JWT token
  */
 function generateToken(payload) {
@@ -16,11 +16,13 @@ function generateToken(payload) {
       userId: payload.userId,
       role: payload.role,
       employeeId: payload.employeeId,
+      departmentId: payload.departmentId || null,
       email: payload.email
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || '24h'
+      // Explicit default: 1 day
+      expiresIn: process.env.JWT_EXPIRES_IN || '1d'
     }
   );
 }

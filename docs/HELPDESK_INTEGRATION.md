@@ -410,7 +410,7 @@ The HR system is the **single source of truth** for employee data. The Helpdesk 
 // Simple in-memory cache with TTL
 const employeeCache = new Map();
 
-async function getCachedEmployee(employeeId, ttl = 300000) { // 5 minutes
+async function getCachedEmployee(employeeId, ttl = 300400) { // 5 minutes
   const cached = employeeCache.get(employeeId);
   if (cached && Date.now() - cached.timestamp < ttl) {
     return cached.data;

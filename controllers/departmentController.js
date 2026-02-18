@@ -65,10 +65,8 @@ class DepartmentController {
         .populate('headEmployeeId', 'fullName email employeeCode')
         .sort({ name: 1 });
 
-      res.json({
-        success: true,
-        data: departments
-      });
+      // Return array directly for frontend .map() compatibility
+      res.json(departments);
     } catch (error) {
       console.error('Error fetching departments:', error);
       res.status(500).json({

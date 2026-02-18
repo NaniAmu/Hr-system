@@ -28,7 +28,6 @@ const departmentSchema = new mongoose.Schema({
 });
 
 // Indexes
-departmentSchema.index({ code: 1 });
 departmentSchema.index({ headEmployeeId: 1 });
 
 // Virtual for populating head employee

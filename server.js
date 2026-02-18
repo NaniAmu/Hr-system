@@ -16,11 +16,11 @@ const User = require("./models/User");
 
 /* -------------------- APP INIT -------------------- */
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
@@ -42,6 +42,7 @@ app.use("/api/employees", require("./routes/employees.routes"));
 app.use("/api/departments", require("./routes/departments.routes"));
 app.use("/api/analytics", require("./routes/analytics.routes"));
 app.use("/api/public", require("./routes/public.routes"));
+app.use("/api/hr", require("./routes/hr.routes"));
 
 
 /* -------------------- ERROR HANDLER -------------------- */
@@ -56,28 +57,39 @@ app.use((err, req, res, next) => {
 
 /* -------------------- HR ADMIN SEED -------------------- */
 async function seedHRAdmin() {
-  const email = "hradmin@gov.et";
-  const password = "HR@Admin123";
+  // Seed 1: hradmin@gov.et
+  const email1 = "hradmin@gov.et";
+  const password1 = "HR@Admin123";
 
-  const existing = await User.findOne({ email });
-  if (existing) {
-    console.log("HR Admin already exists");
-    console.log(`   Email: ${existing.email}, Role: ${existing.role}`);
-    return;
+  const existing1 = await User.findOne({ email: email1 });
+  if (!existing1) {
+    await User.create({
+      email: email1,
+      password: password1,
+      role: "ADMIN",
+      isActive: true
+    });
+    console.log("✅ HR Admin created: hradmin@gov.et");
+  } else {
+    console.log("✅ HR Admin exists: hradmin@gov.et");
   }
 
-  // Create user with plain password - pre-save hook will hash it
-  const hrAdmin = await User.create({
-    email,
-    password, // Plain password - will be hashed by pre-save hook
-    role: "ADMIN",
-    isActive: true
-  });
+  // Seed 2: admin@example.com
+  const email2 = "admin@example.com";
+  const password2 = "admin123";
 
-  console.log("   HR Admin created successfully");
-  console.log(`   Email: ${hrAdmin.email}`);
-  console.log(`   Role: ${hrAdmin.role}`);
-  console.log(`   Password hashed: ${hrAdmin.password.substring(0, 20)}...`);
+  const existing2 = await User.findOne({ email: email2 });
+  if (!existing2) {
+    await User.create({
+      email: email2,
+      password: password2,
+      role: "ADMIN",
+      isActive: true
+    });
+    console.log("✅ Admin created: admin@example.com / admin123");
+  } else {
+    console.log("✅ Admin exists: admin@example.com");
+  }
 }
 
 /* -------------------- BOOTSTRAP -------------------- */

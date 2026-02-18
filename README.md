@@ -77,7 +77,7 @@ PORT=3001
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/hr_system
 JWT_SECRET=your-secret-key-change-in-production
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3004
 ```
 
 3. **Start MongoDB:**

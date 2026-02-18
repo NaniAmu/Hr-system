@@ -58,7 +58,7 @@ class AuthController {
         });
       }
 
-      // Create User
+      // Create User (authentication only)
       const user = new User({
         email: lowerEmail,
         password,
@@ -67,7 +67,7 @@ class AuthController {
       });
       await user.save();
 
-      // Create Employee
+      // Create Employee (profile data)
       const employeeCode = await generateEmployeeCode();
       const employee = new Employee({
         userId: user._id,
@@ -88,12 +88,21 @@ class AuthController {
         userId: user._id.toString(),
         role: user.role,
         employeeId: employee._id.toString(),
+        departmentId: departmentId?.toString() || null,
         email: user.email
       });
 
       res.status(201).json({
         success: true,
-        message: 'User and employee created successfully',
+        message: 'User registered successfully',
+        token,
+        user: {
+          id: user._id.toString(),
+          employeeId: employee._id.toString(),
+          role: user.role,
+          departmentId: departmentId.toString(),
+          email: user.email
+        },
         data: {
           user: {
             id: user._id,
@@ -167,18 +176,29 @@ class AuthController {
         status: 'ACTIVE'
       }).populate('departmentId', 'name');
 
+      const departmentId = employee?.departmentId?._id || employee?.departmentId || null;
+
       const token = generateToken({
         userId: user._id.toString(),
         role: user.role,
         employeeId: employee?._id?.toString() || null,
+        departmentId: departmentId ? departmentId.toString() : null,
         email: user.email
       });
 
-      console.log('[LOGIN DEBUG] Token length:', token.length);
+      const userPayload = {
+        id: user._id.toString(),
+        employeeId: employee?._id?.toString() || null,
+        role: user.role,
+        departmentId: departmentId ? departmentId.toString() : null,
+        email: user.email
+      };
 
       res.json({
         success: true,
         message: 'Login successful',
+        token,
+        user: userPayload,
         data: {
           user: {
             id: user._id,

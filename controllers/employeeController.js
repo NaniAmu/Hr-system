@@ -344,11 +344,8 @@ class EmployeeController {
         employeeCode: emp.employeeCode
       }));
 
-      res.json({
-        success: true,
-        data: formattedEmployees,
-        count: formattedEmployees.length
-      });
+      // Return array directly for frontend .map() compatibility
+      res.json(formattedEmployees);
     } catch (error) {
       console.error('Error fetching employees:', error);
       res.status(500).json({
