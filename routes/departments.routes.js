@@ -60,6 +60,15 @@ router.get(
   registryController.departmentRegistryPdf
 );
 
+// Update department (ADMIN or HR)
+router.put(
+  '/:id',
+  authenticate,
+  requireHR,
+  departmentValidation,
+  departmentController.update
+);
+
 // Assign department head (ADMIN or HR)
 router.put(
   '/:id/head',

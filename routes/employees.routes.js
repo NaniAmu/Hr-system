@@ -29,6 +29,21 @@ router.post(
   employeeController.create
 );
 
+// Update employee (HR only)
+router.put(
+  '/:id',
+  authenticate,
+  requireHR,
+  [
+    body('fullName').optional().notEmpty().withMessage('Full name cannot be empty'),
+    body('email').optional().isEmail().withMessage('Valid email is required'),
+    body('departmentId').optional().isString(),
+    body('position').optional().isString(),
+    body('role').optional().isIn(['ADMIN', 'HR', 'DEPARTMENT_HEAD', 'EMPLOYEE']).withMessage('Invalid role')
+  ],
+  employeeController.update
+);
+
 // Get current user's employee profile
 router.get(
   '/me',

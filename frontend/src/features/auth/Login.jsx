@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import api from '../../app/axios';
 
 const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +22,7 @@ const Login = () => {
       console.log('Login response:', response.data);
       const token = response.data.data?.token || response.data.token;
       if (token) {
-        localStorage.setItem('token', token);
+        login(token);
         navigate('/');
       } else {
         setError('No token received from server');

@@ -130,6 +130,137 @@ class EmployeeController {
   }
 
   /**
+   * Update employee
+   * PUT /api/employees/:id
+   * Requires: HR only
+   */
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const {
+        fullName,
+        email,
+        phone,
+        departmentId,
+        position,
+        role
+      } = req.body;
+
+      // Find employee
+      const employee = await Employee.findById(id);
+      if (!employee) {
+        return res.status(404).json({
+          code: 'EMPLOYEE_NOT_FOUND',
+          message: 'Employee not found',
+          action: 'Check employee ID'
+        });
+      }
+
+      // Check if email already exists (if changed)
+      if (email && email.toLowerCase() !== employee.email) {
+        const existing = await Employee.findOne({
+          email: email.toLowerCase(),
+          _id: { $ne: id }
+        });
+
+        if (existing) {
+          return res.status(400).json({
+            code: 'EMAIL_EXISTS',
+            message: 'Employee with this email already exists',
+            action: 'Use different email'
+          });
+        }
+      }
+
+      // Validate department if provided
+      if (departmentId && departmentId !== employee.departmentId?.toString()) {
+        const department = await Department.findById(departmentId);
+        if (!department) {
+          return res.status(400).json({
+            code: 'DEPARTMENT_NOT_FOUND',
+            message: 'Department not found',
+            action: 'Provide valid department ID'
+          });
+        }
+      }
+
+      // Update fields
+      if (fullName) employee.fullName = fullName;
+      if (email) employee.email = email.toLowerCase();
+      if (phone !== undefined) employee.phone = phone;
+      if (departmentId) employee.departmentId = departmentId;
+      if (position) employee.position = position;
+
+      await employee.save();
+
+      // Sync with User record if email or role changed
+      if (employee.userId) {
+        const user = await User.findById(employee.userId);
+        if (user) {
+          let userUpdated = false;
+
+          if (email && user.email !== email.toLowerCase()) {
+            user.email = email.toLowerCase();
+            userUpdated = true;
+          }
+
+          // Update role if provided and different
+          // NOTE: Role update might require ADMIN privileges in a stricter system,
+          // but for now HR can update roles.
+          if (role && user.role !== role) {
+            user.role = role;
+            userUpdated = true;
+          }
+
+          if (userUpdated) {
+            await user.save();
+          }
+        }
+      }
+
+      // Populate for response
+      await employee.populate('userId', 'email role');
+      if (employee.departmentId) {
+        await employee.populate('departmentId', 'name code');
+      }
+
+      // Format response
+      const formattedEmployee = {
+        userId: employee.userId?._id?.toString() || employee.userId?.toString() || null,
+        id: employee._id.toString(),
+        name: employee.fullName,
+        email: employee.email,
+        phone: employee.phone || null,
+        departmentId: employee.departmentId?._id?.toString() || employee.departmentId?.toString() || null,
+        departmentName: employee.departmentId?.name || null,
+        role: employee.userId?.role || null,
+        status: employee.status.toLowerCase(),
+        position: employee.position || null,
+        employeeCode: employee.employeeCode
+      };
+
+      res.json({
+        success: true,
+        message: 'Employee updated successfully',
+        data: formattedEmployee
+      });
+
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      res.status(500).json({
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to update employee',
+        action: 'Contact administrator'
+      });
+    }
+  }
+
+  /**
    * Get current user's employee profile
    * GET /api/employees/me
    */

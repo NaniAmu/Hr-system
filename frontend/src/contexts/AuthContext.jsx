@@ -30,10 +30,10 @@ export const AuthProvider = ({ children }) => {
   const verifyToken = async () => {
     try {
       // Try to fetch user info by making a simple API call
-      const response = await api.get('/api/hr/employees');
+      const response = await api.get('/hr/employees');
       // If successful, extract user from token (in real app, decode JWT)
       // For now, we'll store user info in localStorage or get from API
-      setUser({ role: 'SUPER_ADMIN' }); // This should come from token decode
+      setUser({ role: 'ADMIN' }); // This should come from token decode
       setLoading(false);
     } catch (error) {
       if (error.response?.status === 403 && error.response?.data?.error === 'EMPLOYEE_NOT_FOUND') {

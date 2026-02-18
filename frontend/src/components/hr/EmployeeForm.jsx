@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
 
-const EmployeeForm = ({ employee, departments, onClose, onSubmit, loading }) => {
+
+const EmployeeForm = ({ employee, departments, onClose, onSubmit, loading, error }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -10,11 +10,10 @@ const EmployeeForm = ({ employee, departments, onClose, onSubmit, loading }) => 
     phone: '',
     departmentId: '',
     position: '',
-    role: 'EMPLOYEE',
-    status: 'ACTIVE'
+    role: 'EMPLOYEE'
   });
 
-  const [formError, setFormError] = useState(null);
+  const [formError, setFormError] = useState(error);
   const [formSuccess, setFormSuccess] = useState(null);
 
   // Get JWT token from localStorage
@@ -35,101 +34,59 @@ const EmployeeForm = ({ employee, departments, onClose, onSubmit, loading }) => 
         phone: employee.phone || '',
         departmentId: employee.departmentId || employee.department?._id || '',
         position: employee.position || '',
-        role: employee.role || employee.roleType || 'EMPLOYEE',
-        status: employee.status || employee.employmentStatus || 'ACTIVE'
+        role: employee.role || employee.roleType || 'EMPLOYEE'
       });
     }
   }, [employee]);
+
+  useEffect(() => {
+    if (error) {
+      setFormError(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (loading === false) {
+       // Reset or handle post-loading state if needed
+    }
+  }, [loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
 
-    try {
-      // Validate required fields
-      if (!formData.fullName || !formData.email || !formData.departmentId || !formData.position) {
-        setFormError('Full Name, Email, Department, and Position are required');
-        return;
-      }
+    // Validate required fields
+    if (!formData.fullName || !formData.email || !formData.departmentId || !formData.position) {
+      setFormError('Full Name, Email, Department, and Position are required');
+      return;
+    }
 
-      // For new employees, password is required
-      if (!employee && !formData.password) {
-        setFormError('Password is required for new employees');
-        return;
-      }
+    // For new employees, password is required
+    if (!employee && !formData.password) {
+      setFormError('Password is required for new employees');
+      return;
+    }
 
-      const payload = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        departmentId: formData.departmentId,
-        position: formData.position
-      };
+    const payload = {
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      departmentId: formData.departmentId,
+      position: formData.position,
+      role: formData.role
+    };
 
-      // Add password for new employees
-      if (!employee) {
-        payload.password = formData.password;
-        payload.role = formData.role;
-      }
+    // Add password for new employees
+    if (!employee) {
+      payload.password = formData.password;
+    }
 
-      console.log('Submitting employee form:', payload);
+    console.log('Submitting employee form:', payload);
 
-      if (employee) {
-        // Update existing employee
-        await axios.put(
-          `http://localhost:3002/api/employees/${employee.id || employee._id}`,
-          payload,
-          { headers: getAuthHeader() }
-        );
-        setFormSuccess('Employee updated successfully');
-      } else {
-        // Create new employee using registration endpoint
-        await axios.post(
-          'http://localhost:3002/api/auth/register',
-          payload,
-          { headers: getAuthHeader() }
-        );
-        setFormSuccess('Employee created successfully');
-      }
-
-      // Call parent onSubmit callback
-      if (onSubmit) {
-        onSubmit(formData);
-      }
-
-      // Close modal after success
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-
-    } catch (err) {
-      console.error('Error saving employee:', err);
-      
-      // Extract error message from various response formats
-      let errorMessage = 'Failed to save employee. Please try again.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.response?.data?.code) {
-        // Handle specific error codes
-        const code = err.response.data.code;
-        if (code === 'EMAIL_EXISTS' || code === 'EMPLOYEE_EXISTS') {
-          errorMessage = 'An employee with this email already exists';
-        } else if (code === 'DEPARTMENT_NOT_FOUND') {
-          errorMessage = 'Selected department not found';
-        } else if (code === 'MISSING_FIELDS') {
-          errorMessage = 'Please fill in all required fields';
-        } else {
-          errorMessage = err.response.data.message || errorMessage;
-        }
-      } else if (typeof err.response?.data === 'string') {
-        errorMessage = err.response.data;
-      }
-      
-      setFormError(errorMessage);
+    // Call parent onSubmit callback
+    if (onSubmit) {
+      onSubmit(payload);
     }
   };
 
@@ -254,41 +211,24 @@ const EmployeeForm = ({ employee, departments, onClose, onSubmit, loading }) => 
               />
             </div>
 
-            {/* Role - only for new employees */}
-            {!employee && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="DEPARTMENT_HEAD">Department Head</option>
-                  <option value="HR">HR</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-            )}
+            {/* Role */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="DEPARTMENT_HEAD">Department Head</option>
+                <option value="HR">HR</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
 
-            {/* Status - only for existing employees */}
-            {employee && (
-              <div>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.status === 'ACTIVE'}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.checked ? 'ACTIVE' : 'INACTIVE' })
-                    }
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Active</span>
-                </label>
-              </div>
-            )}
+
 
             {/* Form actions */}
             <div className="flex justify-end space-x-3 pt-4 border-t">

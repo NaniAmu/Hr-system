@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import api from '../../services/api';
 import EmployeeTable from '../../components/hr/EmployeeTable';
 import EmployeeForm from '../../components/hr/EmployeeForm';
 import { AlertCircle } from 'lucide-react';
@@ -16,15 +16,6 @@ const Employees = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get JWT token from localStorage
-  const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
-  };
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -36,10 +27,7 @@ const Employees = () => {
 
       // Fetch employees
       console.log('[EMPLOYEES] Fetching employees...');
-      const employeesRes = await axios.get(
-        'http://localhost:3002/api/employees',
-        { headers: getAuthHeader() }
-      );
+      const employeesRes = await api.get('/employees');
       console.log('[EMPLOYEES] Response received:', employeesRes.data);
 
       // Extract employees array from various possible response shapes
@@ -55,10 +43,7 @@ const Employees = () => {
 
       // Fetch departments
       console.log('[EMPLOYEES] Fetching departments...');
-      const departmentsRes = await axios.get(
-        'http://localhost:3002/api/departments',
-        { headers: getAuthHeader() }
-      );
+      const departmentsRes = await api.get('/departments');
       console.log('[EMPLOYEES] Departments response received:', departmentsRes.data);
 
       // Extract departments array from various possible response shapes
@@ -120,18 +105,10 @@ const Employees = () => {
       if (editingEmployee) {
         const empId = editingEmployee.id || editingEmployee._id;
         console.log('[EMPLOYEES] Updating employee:', empId);
-        await axios.put(
-          `http://localhost:3002/api/employees/${empId}`,
-          formData,
-          { headers: getAuthHeader() }
-        );
+        await api.put(`/employees/${empId}`, formData);
       } else {
         console.log('[EMPLOYEES] Creating new employee');
-        await axios.post(
-          'http://localhost:3002/api/auth/register',
-          formData,
-          { headers: getAuthHeader() }
-        );
+        await api.post('/auth/register', formData);
       }
 
       handleCloseForm();
@@ -262,6 +239,7 @@ const Employees = () => {
             onClose={handleCloseForm}
             onSubmit={handleSubmit}
             loading={submitting}
+            error={error}
           />
         )}
       </main>

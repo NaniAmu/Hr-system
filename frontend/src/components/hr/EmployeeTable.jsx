@@ -18,9 +18,7 @@ const EmployeeTable = ({ employees, onEdit }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Department
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
+
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
@@ -29,7 +27,7 @@ const EmployeeTable = ({ employees, onEdit }) => {
         <tbody className="bg-white divide-y divide-gray-200">
           {employees.length === 0 ? (
             <tr>
-              <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+              <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
                 No employees found
               </td>
             </tr>
@@ -48,17 +46,7 @@ const EmployeeTable = ({ employees, onEdit }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {emp.departmentName || emp.department?.name || 'Unassigned'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      (emp.status === 'ACTIVE' || emp.employmentStatus === 'ACTIVE')
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {emp.status === 'ACTIVE' || emp.employmentStatus === 'ACTIVE' ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => onEdit(emp)}

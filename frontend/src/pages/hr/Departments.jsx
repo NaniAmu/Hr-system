@@ -98,13 +98,21 @@ const Departments = () => {
       setSubmitting(true);
       setError(null);
 
-      console.log('[DEPARTMENTS] Creating/updating department');
-      await api.post('/api/departments', formData);
+      let deptId;
 
-      if (formData.headEmployeeId && editingDepartment) {
-        const deptId = editingDepartment._id || editingDepartment.id;
+      if (editingDepartment) {
+        deptId = editingDepartment._id || editingDepartment.id;
+        console.log('[DEPARTMENTS] Updating department:', deptId);
+        await api.put(`/departments/${deptId}`, formData);
+      } else {
+        console.log('[DEPARTMENTS] Creating new department');
+        const res = await api.post('/departments', formData);
+        deptId = res.data?.data?._id || res.data?.data?.id || res.data?._id || res.data?.id;
+      }
+
+      if (formData.headEmployeeId && deptId) {
         console.log('[DEPARTMENTS] Assigning department head:', deptId);
-        await api.put(`/api/departments/${deptId}/head`, {
+        await api.put(`/departments/${deptId}/head`, {
           headEmployeeId: formData.headEmployeeId
         });
       }
