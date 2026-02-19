@@ -36,12 +36,7 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen sticky top-0">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">HR</div>
-          <span>HRMS</span>
-        </h1>
-      </div>
+     
 
       <nav className="flex-1 px-4 space-y-2 mt-4">
         {filteredNavItems.length > 0 ? (

@@ -149,6 +149,7 @@ class AuthController {
       const lowerEmail = email.toLowerCase();
 
       const user = await User.findOne({ email: lowerEmail }).select('+password');
+      console.log('[HR Login] User.findOne result:', user ? { _id: user._id.toString(), email: user.email, isActive: user.isActive } : 'NOT FOUND');
       if (!user) {
         return res.status(401).json({
           code: 'INVALID_CREDENTIALS',
@@ -171,16 +172,37 @@ class AuthController {
         });
       }
 
+      // Find the employee record to get department and employee profile
+      console.log('[HR Login] Looking up employee for userId:', user._id.toString());
+      
       const employee = await Employee.findOne({
         userId: user._id,
         status: 'ACTIVE'
       }).populate('departmentId', 'name');
 
+      console.log('[HR Login] Employee lookup result:', employee ? {
+        employeeId: employee._id.toString(),
+        role: employee.role,
+        departmentId: employee.departmentId?._id?.toString() || employee.departmentId?.toString(),
+        status: employee.status
+      } : 'NOT FOUND');
+
+      // Map to correct roles for Helpdesk system
+      const helpdeskRoleMap = {
+        'ADMIN': 'Admin',
+        'HR': 'HR',
+        'DEPARTMENT_HEAD': 'DepartmentHead',
+        'EMPLOYEE': 'Employee'
+      };
+
+      // Use the ROLE from the EMPLOYEE record if it exists, otherwise use USER role
+      const effectiveRole = employee?.role || user.role;
+
       const departmentId = employee?.departmentId?._id || employee?.departmentId || null;
 
       const token = generateToken({
         userId: user._id.toString(),
-        role: user.role,
+        role: helpdeskRoleMap[effectiveRole] || effectiveRole,
         employeeId: employee?._id?.toString() || null,
         departmentId: departmentId ? departmentId.toString() : null,
         email: user.email
@@ -190,7 +212,7 @@ class AuthController {
         id: user._id.toString(),
         userId: user._id.toString(),
         employeeId: employee?._id?.toString() || user._id.toString(),
-        role: user.role,
+        role: helpdeskRoleMap[effectiveRole] || effectiveRole,
         departmentId: departmentId ? departmentId.toString() : null,
         email: user.email,
         name: employee?.fullName || user.email
